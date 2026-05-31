@@ -3,7 +3,11 @@
 __pycache__/
 *.pyc
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 *.log
+.chrome-test-profile/
 node_modules/
 dist/
 *.tsbuildinfo
