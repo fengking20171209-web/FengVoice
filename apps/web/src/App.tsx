@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ClipboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   FileText,
@@ -18,10 +18,19 @@ import {
   type Note,
   type NoteDraft,
   updateNote,
+  uploadNoteImage,
 } from "./api";
+import {
+  firstImageFromClipboard,
+  imageAltText,
+  insertMarkdownAtSelection,
+  markdownImage,
+  toAbsoluteImageUrl,
+} from "./imagePaste";
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "offline";
 type Theme = "comfort" | "warm" | "light";
+type Toast = { tone: "success" | "error"; message: string };
 
 const emptyDraft = (): NoteDraft => ({
   title: "未命名笔记",
@@ -59,8 +68,11 @@ export function App() {
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [error, setError] = useState("");
+  const [toast, setToast] = useState<Toast | null>(null);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("fengvoice-theme") as Theme) || "comfort");
   const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const toastTimerRef = useRef<number | null>(null);
   const focusTitleRef = useRef(false);
   const selectedIdRef = useRef<string | null>(null);
   const draftRef = useRef(draft);
@@ -87,6 +99,18 @@ export function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("fengvoice-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  function showToast(nextToast: Toast) {
+    setToast(nextToast);
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 2600);
+  }
 
   const loadNotes = useCallback(async () => {
     try {
@@ -180,6 +204,31 @@ export function App() {
     setDirty(true);
     dirtyRef.current = true;
     setSaveState("idle");
+  }
+
+  async function handleContentPaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const imageFile = firstImageFromClipboard(event.clipboardData.items);
+    if (!imageFile) return;
+
+    event.preventDefault();
+    const start = event.currentTarget.selectionStart;
+    const end = event.currentTarget.selectionEnd;
+
+    try {
+      const uploaded = await uploadNoteImage(imageFile);
+      const absoluteUrl = toAbsoluteImageUrl(uploaded.url);
+      const alt = imageAltText(uploaded, imageFile);
+      const markdown = markdownImage(absoluteUrl, alt);
+      updateDraft({
+        content: insertMarkdownAtSelection(draftRef.current.content, markdown, start, end),
+      });
+      showToast({ tone: "success", message: "图片上传成功" });
+      window.requestAnimationFrame(() => contentRef.current?.focus());
+    } catch (cause) {
+      console.error("Image paste upload failed", cause);
+      showToast({ tone: "error", message: "图片上传失败，请重试" });
+      setError("图片上传失败，请重试");
+    }
   }
 
   async function newNote() {
@@ -328,6 +377,7 @@ export function App() {
             <button onClick={() => setError("")} title="关闭提示"><X size={16} /></button>
           </div>
         )}
+        {toast && <div className={`toast ${toast.tone}`}>{toast.message}</div>}
         <section className="editor-body">
           {!selectedId && <p className="editor-empty">从左侧新建一条笔记，开始记录今天的想法。</p>}
           <input
@@ -355,8 +405,10 @@ export function App() {
             />
           </div>
           <textarea
+            ref={contentRef}
             value={draft.content}
             onChange={(event) => updateDraft({ content: event.target.value })}
+            onPaste={(event) => void handleContentPaste(event)}
             placeholder="记录想法、决策、内容草稿……"
             disabled={!selectedId}
           />

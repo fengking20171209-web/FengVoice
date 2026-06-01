@@ -15,6 +15,11 @@ export type Note = {
 
 export type NoteDraft = Pick<Note, "title" | "content" | "note_type" | "tags" | "status">;
 
+export type UploadedImage = {
+  url: string;
+  alt: string;
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
   if (!response.ok) {
@@ -49,5 +54,14 @@ export function updateNote(id: string, draft: NoteDraft) {
 
 export function deleteNote(id: string) {
   return request<void>(`/api/notes/${id}`, { method: "DELETE" });
+}
+
+export function uploadNoteImage(file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return request<UploadedImage>("/api/uploads/images", {
+    method: "POST",
+    body,
+  });
 }
 
