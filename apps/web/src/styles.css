@@ -98,6 +98,9 @@ h2 { overflow-wrap: anywhere; font-size: 22px; }
 .icon-button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--text); background: transparent; }
 .danger:hover { border-color: var(--danger); color: var(--danger); }
 .error-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 30px; color: var(--text); background: var(--error-bg); font-size: 13px; }
+.toast { position: fixed; right: 22px; bottom: 22px; z-index: 10; max-width: min(360px, calc(100vw - 44px)); padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--panel); box-shadow: 0 10px 30px rgba(0, 0, 0, .22); font-size: 14px; }
+.toast.success { border-color: #669b25; }
+.toast.error { border-color: var(--danger); background: var(--error-bg); }
 .editor-body { display: flex; width: min(1040px, 100%); flex: 1; flex-direction: column; gap: 14px; padding: 30px; }
 .editor-empty, .local-hint { color: var(--muted); font-size: 13px; }
 .title-input, .meta-row input, select, textarea { border: 1px solid var(--border); border-radius: 6px; outline: 0; color: var(--text); background: var(--input-bg); }

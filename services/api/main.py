@@ -11,8 +11,9 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -28,6 +29,10 @@ load_dotenv(ROOT_DIR / ".env")
 DB_PATH = Path(os.getenv("FENGVOICE_DB_PATH", str(ROOT_DIR / "data" / "fengvoice.db")))
 if not DB_PATH.is_absolute():
     DB_PATH = ROOT_DIR / DB_PATH
+PUBLIC_DIR = ROOT_DIR / "public"
+NOTE_UPLOAD_DIR = PUBLIC_DIR / "uploads" / "notes"
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+NOTE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="FengVoice API", version="0.1.0")
 app.add_middleware(
@@ -37,6 +42,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/uploads", StaticFiles(directory=PUBLIC_DIR / "uploads"), name="uploads")
 
 
 class NoteInput(BaseModel):
@@ -53,6 +59,11 @@ class Note(NoteInput):
     updated_at: str
 
 
+class ImageUploadResponse(BaseModel):
+    url: str
+    alt: str
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -65,6 +76,7 @@ def connect() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    NOTE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     with closing(connect()) as connection:
         connection.execute(
             """
@@ -96,6 +108,23 @@ def record_memory(note: Note, event_type: str) -> None:
         logger.warning("EverCore memory write skipped: %s", exc)
 
 
+def safe_extension(filename: str, content_type: str) -> str:
+    extension = Path(filename or "").suffix.lower()
+    allowed = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    if extension in allowed:
+        return extension
+    return {
+        "image/png": ".png",
+        "image/jpeg": ".jpg",
+        "image/gif": ".gif",
+        "image/webp": ".webp",
+    }.get(content_type, ".png")
+
+
+def absolute_upload_url(request: Request, relative_path: str) -> str:
+    return str(request.url_for("uploads", path=relative_path.removeprefix("/uploads/")))
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_db()
@@ -104,6 +133,36 @@ def startup() -> None:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "fengvoice-api"}
+
+
+@app.post("/api/uploads/images", response_model=ImageUploadResponse)
+async def upload_note_image(request: Request, file: UploadFile = File(...)) -> ImageUploadResponse:
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image uploads are allowed")
+
+    extension = safe_extension(file.filename or "", file.content_type)
+    filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid4().hex}{extension}"
+    target = NOTE_UPLOAD_DIR / filename
+
+    size = 0
+    try:
+        with target.open("wb") as output:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > MAX_UPLOAD_BYTES:
+                    output.close()
+                    target.unlink(missing_ok=True)
+                    raise HTTPException(status_code=413, detail="Image upload is limited to 5MB")
+                output.write(chunk)
+    finally:
+        await file.close()
+
+    if size == 0:
+        target.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail="Uploaded image is empty")
+
+    relative_url = f"/uploads/notes/{filename}"
+    return ImageUploadResponse(url=absolute_upload_url(request, relative_url), alt="pasted image")
 
 
 @app.get("/api/notes", response_model=list[Note])

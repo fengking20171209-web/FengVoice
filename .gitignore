@@ -9,8 +9,10 @@ __pycache__/
 *.db-shm
 *.db-wal
 *.log
+tmp-*.log
 .chrome-test-profile/
 node_modules/
 dist/
+public/uploads/
 *.tsbuildinfo
 .DS_Store
