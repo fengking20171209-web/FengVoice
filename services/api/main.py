@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import hashlib
 import logging
 import os
 import sqlite3
@@ -16,6 +18,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from asset_index import create_note_image_record
+from asset_index import create_note_image_record
 
 MEMORY_BRIDGE_DIR = Path(__file__).resolve().parents[1] / "memory-bridge"
 sys.path.insert(0, str(MEMORY_BRIDGE_DIR))
@@ -62,6 +66,8 @@ class Note(NoteInput):
 class ImageUploadResponse(BaseModel):
     url: str
     alt: str
+    image_id: str
+    image_id: str
 
 
 def now_iso() -> str:
@@ -162,7 +168,14 @@ async def upload_note_image(request: Request, file: UploadFile = File(...)) -> I
         raise HTTPException(status_code=400, detail="Uploaded image is empty")
 
     relative_url = f"/uploads/notes/{filename}"
-    return ImageUploadResponse(url=absolute_upload_url(request, relative_url), alt="pasted image")
+    public_url = absolute_upload_url(request, relative_url)
+    record = create_note_image_record(
+        file_path=target,
+        public_url=public_url,
+        alt="pasted image",
+        source="note_paste",
+    )
+    return ImageUploadResponse(url=public_url, alt="pasted image", image_id=record["image_id"])
 
 
 @app.get("/api/notes", response_model=list[Note])

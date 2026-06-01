@@ -16,3 +16,5 @@ dist/
 public/uploads/
 *.tsbuildinfo
 .DS_Store
+
+runtime/

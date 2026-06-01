@@ -1,4 +1,4 @@
-export const API_BASE_URL =
+﻿export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export type Note = {
@@ -18,6 +18,7 @@ export type NoteDraft = Pick<Note, "title" | "content" | "note_type" | "tags" | 
 export type UploadedImage = {
   url: string;
   alt: string;
+  image_id: string;
 };
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
