@@ -1,13 +1,14 @@
 # FengVoice
 
-FengVoice is a lightweight, local-first content workspace for notes and image
-assets. It provides a fast note-taking experience with paste-upload image
-support, an append-only image asset index, and optional use of AI memory
-bridges for enriched context.
+FengVoice is an early-stage, local-first platform for organizing AI-generated
+content and note-linked image assets.
 
-Built with a Python/FastAPI backend and a React/TypeScript frontend, FengVoice
-runs entirely on your machine with no external dependencies beyond what you
-already have installed.
+The current alpha release focuses on a practical creator workflow:
+
+- paste images directly into notes
+- upload pasted images through the local API
+- create an append-only JSONL asset index
+- return stable image IDs for future search, tagging, and retrieval
 
 ## Features
 
@@ -33,19 +34,19 @@ uvicorn main:app --reload --port 8000
 
 ### Web
 
-`powershell
+```powershell
 cd apps/web
 npm install
 npm run dev -- --host 0.0.0.0 --port 3000
-`
+```
 
 Open http://localhost:3000. The API health endpoint is http://localhost:8000/health.
 
 ### Docker Compose
 
-`powershell
+```powershell
 docker compose up --build
-`
+```
 
 ## Documentation
 

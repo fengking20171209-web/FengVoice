@@ -27,28 +27,28 @@ separation between data, services, and presentation.
 
 ## Components
 
-### Web App (\pps/web\)
+### Web App (\`apps/web`)
 
 Vite-powered React application with TypeScript. Communicates with the API
 over HTTP. Supports pasting images directly into note content.
 
-### API (\services/api\)
+### API (`services/api`)
 
 FastAPI application providing:
-- Notes CRUD (\/api/notes\)
-- Image upload (\/api/uploads/images\)
-- Asset index via \sset_index.py\ (SHA-256, JSONL)
-- Health check (\/health\)
+- Notes CRUD (`/api/notes`)
+- Image upload (`/api/uploads/images`)
+- Asset index via \`asset_index.py` (SHA-256, JSONL)
+- Health check (`/health`)
 
-Persistence is via SQLite at \data/fengvoice.db\. Uploaded images are stored
-under \public/uploads/notes/\.
+Persistence is via SQLite at `data/fengvoice.db`. Uploaded images are stored
+under `public/uploads/notes/`.
 
-### Memory Bridge (\services/memory-bridge\)
+### Memory Bridge (`services/memory-bridge`)
 
 An optional lightweight HTTP client that writes note events to an EverCore
 memory server. Failures are logged but never block the main request path.
 
-### Graph Bridge (\services/graph-bridge\)
+### Graph Bridge (`services/graph-bridge`)
 
 Reserved for future graph-based read integration. Currently a placeholder.
 
@@ -59,4 +59,4 @@ Reserved for future graph-based read integration. Currently a placeholder.
 3. API persists to SQLite and (optionally) forwards to memory bridge.
 4. Image pastes are uploaded, stored to disk, indexed by SHA-256, and the
    absolute URL is returned for embedding in note content.
-5. Asset index records are appended to untime/asset-index/note-images.jsonl\.
+5. Asset index records are appended to `runtime/asset-index/note-images.jsonl`.

@@ -43,5 +43,10 @@ jobs:
         working-directory: apps/web
         run: npm run build
 
-      - name: Smoke check
-        run: echo "CI passed"
+      - name: Verify image paste upload
+        working-directory: .
+        run: node scripts/verify-image-paste-upload.js
+
+      - name: Verify image asset index
+        working-directory: .
+        run: node scripts/verify-image-asset-index.js

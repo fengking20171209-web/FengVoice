@@ -3,7 +3,7 @@
 > **Project**: FengVoice
 > **Date**: 2026-06-01
 > **Repository**: https://github.com/fengking20171209-web/FengVoice
-> **Branch**: \codex/oss-application-rush
+> **Branch**: `codex/oss-application-rush`
 ## Application Overview
 
 FengVoice is a local-first content workspace for notes and image assets,
@@ -40,9 +40,12 @@ All standard OSS documents have been created:
 | .github/PULL_REQUEST_TEMPLATE.md | PR template |
 | .github/workflows/test.yml | CI workflow |
 
-## Reflection
+## Maintainer Note
 
-The AI-assisted development workflow enabled rapid iteration across the full
-stack, from database schema to React UI to CI configuration, within a
-single project context. The OSS Application Rush provided the structure and
-motivation to formalize community-facing documentation alongside the code.
+I am the founder and core maintainer of FengVoice, an early-stage open-source
+project focused on local-first AI asset management for creators and knowledge
+workers. The project is currently at v0.1.0-alpha.
+
+This OSS documentation was prepared as part of the OpenAI Codex OSS Application
+Rush, which provided the structure to formalize community-facing materials
+alongside active feature development.

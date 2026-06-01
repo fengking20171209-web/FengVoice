@@ -2,6 +2,11 @@
 
 > Last updated: 2026-06-01
 
+## In progress
+
+- OSS documentation and CI setup
+- OpenAI Codex for OSS application preparation
+
 ## Completed
 
 - **Phase 0** -- Repository and service foundation
