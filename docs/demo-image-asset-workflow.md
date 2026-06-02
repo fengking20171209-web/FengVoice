@@ -261,3 +261,21 @@ node scripts/verify-image-paste-upload.js
 | v0.2.0-alpha | Asset index validation, lookup, and metadata filters |
 | v0.2.1-alpha | Upload security hardening with magic bytes validation |
 | v0.2.2-alpha | Image asset migration dry-run |
+
+
+## Screenshots
+
+The current demo is command-output based.
+
+The following screenshots should be added when a local browser session is available. See the [screenshot checklist](assets/demo/README.md) for capture instructions.
+
+| Screenshot | Purpose |
+|------------|---------|
+| 01-note-editor.png | Show the note editor with a blank or existing note |
+| 02-pasted-image-markdown.png | Show pasted image Markdown URL in the editor |
+| 03-uploaded-image-url.png | Confirm the uploaded image is accessible at its public URL |
+| 04-jsonl-index.png | Show a JSONL asset index record |
+| 05-validate-cli.png | Show validate-image-asset-index.py output |
+| 06-lookup-filter-cli.png | Show find-image-asset.py lookup and filter output |
+| 07-migration-dry-run.png | Show migrate-existing-note-images.py output |
+
