@@ -53,6 +53,7 @@ docker compose up --build
 - [Architecture](docs/architecture.md)
 - [Use Cases](docs/use-cases.md)
 - [Maintainer Workflow](docs/maintainer-workflow.md)
+- [Local development troubleshooting](docs/troubleshooting.md)
 - [Product Roadmap](docs/product/roadmap.md)
 - [Project Vision](docs/product/vision.md)
 
