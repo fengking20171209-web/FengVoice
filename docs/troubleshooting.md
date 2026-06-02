@@ -145,6 +145,33 @@ cd D:\Projects\FengVoice
 node scripts/verify-image-asset-index.js
 ```
 
+### Validate the JSONL asset index
+
+- Symptom: maintainers need to check whether
+  `runtime/asset-index/note-images.jsonl` contains malformed lines, missing
+  fields, invalid values, or duplicate records.
+- Cause: the asset index is append-only local runtime data, so manual edits,
+  repeated local tests, or interrupted workflows can leave records that need
+  review.
+- Fix: run the standalone validator:
+
+```powershell
+cd D:\Projects\FengVoice
+python scripts/validate-image-asset-index.py
+```
+
+For machine-readable output:
+
+```powershell
+python scripts/validate-image-asset-index.py --json
+```
+
+To validate a specific JSONL file:
+
+```powershell
+python scripts/validate-image-asset-index.py --index runtime/asset-index/note-images.jsonl
+```
+
 ### image_id Is Missing from Upload Response
 
 - Symptom: the upload API response includes a URL but no `image_id`.
@@ -154,6 +181,8 @@ node scripts/verify-image-asset-index.js
 
 ```powershell
 cd D:\Projects\FengVoice
+python scripts/verify-image-asset-index-validation.py
+python scripts/validate-image-asset-index.py --json
 node scripts/verify-image-asset-index.js
 ```
 
