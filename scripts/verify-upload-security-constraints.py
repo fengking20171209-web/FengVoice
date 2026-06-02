@@ -55,14 +55,16 @@ def main() -> int:
     check("INDEX_FILE.open('a'" in asset_source, "PASS", "asset index writes append-only JSONL records", results)
     check("source" in asset_source and "note_paste" in asset_source, "PASS", "asset index records include note_paste source", results)
 
-    warn(
-        "imghdr" in main_source or "python-magic" in main_source or "magic" in main_source.lower(),
-        "magic bytes validation is not implemented yet; MIME currently depends on upload metadata",
+    check(
+        "detect_image_format" in main_source and "validate_upload_magic_bytes" in main_source,
+        "PASS",
+        "upload endpoint validates magic bytes for PNG, JPEG, and WebP image content",
         results,
     )
-    warn(
-        "'mime_type': 'image/png'" not in asset_source,
-        "asset index currently stores a fixed image/png MIME value instead of the upload content type",
+    check(
+        "'mime_type': mime_type or 'image/png'" in asset_source,
+        "PASS",
+        "asset index stores actual upload MIME type via optional mime_type parameter",
         results,
     )
 

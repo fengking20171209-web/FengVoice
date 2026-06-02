@@ -38,6 +38,7 @@ def create_note_image_record(
     alt: str,
     source: str = 'note_paste',
     note_id: str | None = None,
+    mime_type: str | None = None,
 ) -> dict:
     ensure_dirs()
     image_id = _next_image_id()
@@ -50,7 +51,7 @@ def create_note_image_record(
         'stored_path': str(file_path.relative_to(ROOT_DIR)),
         'public_url': public_url,
         'sha256': _sha256(file_path),
-        'mime_type': 'image/png',
+        'mime_type': mime_type or 'image/png',
         'size_bytes': stat.st_size,
         'width': None,
         'height': None,
