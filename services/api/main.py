@@ -126,6 +126,36 @@ def safe_extension(filename: str, content_type: str) -> str:
         "image/webp": ".webp",
     }.get(content_type, ".png")
 
+# Magic bytes signatures for supported image formats
+_MAGIC_PNG = b"""\x89PNG\r\n\x1a\n"""
+_MAGIC_JPEG = b"""\xff\xd8\xff"""
+_MAGIC_WEBP_RIFF = b"RIFF"
+_MAGIC_WEBP_HEADER = b"WEBP"
+
+
+def detect_image_format(data: bytes) -> str | None:
+    if len(data) < 4:
+        return None
+    if data[:8] == _MAGIC_PNG:
+        return "image/png"
+    if data[:3] == _MAGIC_JPEG:
+        return "image/jpeg"
+    if data[:4] == _MAGIC_WEBP_RIFF and len(data) >= 12 and data[8:12] == _MAGIC_WEBP_HEADER:
+        return "image/webp"
+    return None
+
+
+def validate_upload_magic_bytes(content_type: str, data: bytes) -> str:
+    detected = detect_image_format(data)
+    if detected is None:
+        raise HTTPException(status_code=400, detail="Uploaded file content does not match PNG, JPEG, or WebP image format")
+    if detected != content_type:
+        raise HTTPException(status_code=400, detail=f"Declared MIME type '{content_type}' does not match detected image format '{detected}'")
+    return detected
+
+
+
+
 
 def absolute_upload_url(request: Request, relative_path: str) -> str:
     return str(request.url_for("uploads", path=relative_path.removeprefix("/uploads/")))
@@ -146,13 +176,20 @@ async def upload_note_image(request: Request, file: UploadFile = File(...)) -> I
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image uploads are allowed")
 
-    extension = safe_extension(file.filename or "", file.content_type)
+    first_chunk = await file.read(1024 * 1024)
+    if not first_chunk:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty")
+
+    detected_mime = validate_upload_magic_bytes(file.content_type, first_chunk)
+
+    extension = safe_extension(file.filename or "", detected_mime)
     filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid4().hex}{extension}"
     target = NOTE_UPLOAD_DIR / filename
 
-    size = 0
+    size = len(first_chunk)
     try:
         with target.open("wb") as output:
+            output.write(first_chunk)
             while chunk := await file.read(1024 * 1024):
                 size += len(chunk)
                 if size > MAX_UPLOAD_BYTES:
@@ -174,6 +211,7 @@ async def upload_note_image(request: Request, file: UploadFile = File(...)) -> I
         public_url=public_url,
         alt="pasted image",
         source="note_paste",
+        mime_type=detected_mime,
     )
     return ImageUploadResponse(url=public_url, alt="pasted image", image_id=record["image_id"])
 

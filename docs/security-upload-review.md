@@ -37,12 +37,12 @@ The endpoint currently:
 | Area | Status | Risk | Recommendation |
 |---|---|---|---|
 | Upload size limit | PASS | Large uploads are capped at `5MB`. | Keep the current limit documented and covered by tests. |
-| MIME type validation | WARN | The endpoint checks `file.content_type.startswith("image/")`, which depends on client-provided metadata. | Add magic bytes validation in a future PR before broadening upload workflows. |
+| MIME type validation | PASS | The endpoint checks `file.content_type.startswith("image/")` and validates magic bytes for PNG, JPEG, and WebP content. | Magic bytes validation added in #19. |
 | Filename handling | PASS | Stored filenames are generated with timestamp and UUID content instead of trusting user filenames. | Keep user-provided names out of final storage paths. |
 | Runtime file safety | PASS | `.gitignore` excludes both `runtime/` and `public/uploads/`. | Continue treating uploaded files and local indexes as runtime data. |
 | Public URL exposure | PASS | Returned URLs are constrained to `/uploads/notes/<generated-file>`. | Keep upload paths constrained to the notes upload directory. |
 | JSONL index write safety | PASS | Asset index records are append-only and include `sha256`, `image_id`, and `source`. | Use the validation CLI to inspect malformed or duplicate records. |
-| Asset index MIME recording | WARN | `asset_index.py` currently records `mime_type` as `image/png` regardless of uploaded content type. | Track the actual upload content type in a future metadata PR. |
+| Asset index MIME recording | PASS | `asset_index.py` now accepts an optional `mime_type` parameter and stores the actual MIME type detected from magic bytes. | Actual MIME type recording added as part of #19. |
 | CI / test coverage | PASS | Upload and asset index verification scripts exist, and this PR adds a lightweight security constraint check. | Keep CI running the verification scripts on every PR. |
 
 ## Verified Safeguards
@@ -63,7 +63,7 @@ The endpoint currently:
 
 ## Known Limitations
 
-- MIME validation does not inspect magic bytes yet.
+- MIME validation now inspects magic bytes for PNG, JPEG, and WebP formats. Declared MIME must match detected content.
 - The asset index currently stores a fixed `image/png` MIME value instead of the
   actual upload content type.
 - The upload endpoint is intended for local alpha use and does not yet include
@@ -95,3 +95,14 @@ npm.cmd run test:image-paste
 cd D:\Projects\FengVoice
 node scripts/verify-image-asset-index.js
 ```
+
+### Magic bytes validation
+
+Magic bytes validation was added in Issue #19:
+
+- PNG detection: `\x89PNG\r\n\x1a\n` (8 bytes)
+- JPEG detection: `\xff\xd8\xff` (3 bytes)
+- WebP detection: `RIFF....WEBP` (12 bytes, checks RIFF container and WEBP header)
+- MIME mismatch detection: rejects uploads where declared content type does not match detected format
+- Actual MIME type is passed to the asset index record
+- Tests: 8 scenarios in the upload security verification script
