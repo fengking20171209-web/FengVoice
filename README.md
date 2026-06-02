@@ -95,6 +95,8 @@ docker compose up --build
 
 ## Documentation
 
+- [Image asset workflow demo](docs/demo-image-asset-workflow.md)
+
 - [Architecture](docs/architecture.md)
 - [Use Cases](docs/use-cases.md)
 - [Maintainer Workflow](docs/maintainer-workflow.md)
