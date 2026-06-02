@@ -48,6 +48,10 @@ jobs:
         working-directory: .
         run: node scripts/verify-image-paste-upload.js
 
+      - name: Verify image asset index validation CLI
+        working-directory: .
+        run: python scripts/verify-image-asset-index-validation.py
+
       - name: Verify image asset index
         working-directory: .
         run: node scripts/verify-image-asset-index.js
