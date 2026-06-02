@@ -302,3 +302,33 @@ npm.cmd run test:image-paste
 cd D:\Projects\FengVoice
 node scripts/verify-image-asset-index.js
 ```
+
+
+## Image migration dry-run
+
+To scan existing uploaded images and compare them with the JSONL asset index:
+
+`powershell
+python scripts/migrate-existing-note-images.py
+`
+
+Options:
+
+`powershell
+python scripts/migrate-existing-note-images.py --json
+python scripts/migrate-existing-note-images.py --uploads public/uploads/notes --index runtime/asset-index/note-images.jsonl
+`
+
+The tool runs in dry-run mode by default and does not modify any files.
+
+It reports:
+
+- uploaded files scanned
+- existing index records
+- missing index records
+- duplicate sha256 values in the index
+- duplicate image_id values in the index
+- broken public_url records (URL target missing)
+- malformed JSONL index lines
+
+See scripts/migrate-existing-note-images.py for the full CLI interface.
