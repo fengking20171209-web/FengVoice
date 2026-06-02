@@ -22,25 +22,70 @@ The current alpha release focuses on a practical creator workflow:
 
 ## Quick Start
 
-### API
+FengVoice currently runs as a local `v0.1.x-alpha` workspace with two
+independent services:
 
-`powershell
+- API service: `services/api`
+- Web app: `apps/web`
+
+### 1. Start the API
+
+Run the API from the `services/api` directory:
+
+```powershell
 cd services/api
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-`
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m uvicorn main:app --host 127.0.0.1 --port 8000
+```
 
-### Web
+The API health endpoint is:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+### 2. Start the Web App
+
+Run the web app from the `apps/web` directory:
 
 ```powershell
 cd apps/web
-npm install
-npm run dev -- --host 0.0.0.0 --port 3000
+npm.cmd install
+npm.cmd run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Open http://localhost:3000. The API health endpoint is http://localhost:8000/health.
+### 3. Open the App
+
+```text
+http://127.0.0.1:5173/
+```
+
+### 4. Run Verification Checks
+
+Use these checks after local setup or documentation/CI changes:
+
+```powershell
+cd apps/web
+npm.cmd run build
+npm.cmd run test:image-paste
+
+cd ../..
+node scripts/verify-image-asset-index.js
+```
+
+### 5. Runtime Files
+
+Uploaded note images and local asset indexes are runtime files. They should
+stay out of Git:
+
+- `runtime/`
+- `public/uploads/`
+
+For common setup issues, see
+[Local development troubleshooting](docs/troubleshooting.md).
 
 ### Docker Compose
 
