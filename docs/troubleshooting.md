@@ -197,6 +197,14 @@ For machine-readable output:
 python scripts/find-image-asset.py --image-id img_example --json
 ```
 
+To filter by metadata:
+
+```powershell
+python scripts/find-image-asset.py --source note_paste
+python scripts/find-image-asset.py --mime-type image/png --json
+python scripts/find-image-asset.py --min-size 100 --max-size 500000
+```
+
 ### image_id Is Missing from Upload Response
 
 - Symptom: the upload API response includes a URL but no `image_id`.
