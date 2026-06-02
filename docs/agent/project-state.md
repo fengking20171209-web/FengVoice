@@ -1,53 +1,57 @@
-﻿# FengVoice Project State
+# FengVoice Project State
 
 ## Current status
 
 FengVoice is an early-stage alpha OSS project.
 
-Current HEAD: 59eeb94 feat: add metadata filters for image asset lookup
+Current releases: v0.1.0-alpha through v0.2.2-alpha.
 
 ## Releases
 
 | Release | Description |
 |---------|-------------|
-| v0.1.0-alpha | note image paste upload and JSONL asset index |
-| v0.1.1-alpha | maintainer workflow and OSS review readiness |
-| v0.2.0-alpha | image asset lookup and validation workflow |
+| v0.1.0-alpha | Note image paste upload and JSONL asset index |
+| v0.1.1-alpha | Maintainer workflow and OSS review readiness |
+| v0.2.0-alpha | Asset index validation, lookup, and metadata filters |
+| v0.2.1-alpha | Upload security hardening with magic bytes validation |
+| v0.2.2-alpha | Image asset migration dry-run |
 
 ## Completed workflow
 
-- image paste upload
-- JSONL asset indexing
-- asset index validation CLI
-- asset lookup by image_id
-- asset lookup by sha256
-- metadata filters (source, mime_type, size_bytes)
-- upload endpoint security review
-- troubleshooting docs
-- README quick start improvements
+- Note image paste upload
+- Stable image_id generation
+- JSONL image asset index with sha256
+- Asset index validation CLI
+- Image lookup by image_id and sha256
+- Metadata filters (source, mime_type, size_bytes)
+- Upload endpoint security review
+- Magic bytes validation for PNG, JPEG, WebP
+- Real MIME type recorded in JSONL asset index
+- Migration dry-run CLI for existing images
+- Image asset workflow demo document
+- Codex operating instructions (AGENTS.md, docs/agent/)
+- CI / verification suite
 
-## Current milestone
+## Open issues
 
-v0.2.0-alpha
-
-## Open issues to prioritize
-
-1. Issue #19 security: add magic bytes validation for uploaded images
-2. Issue #10 feature: add migration tool for existing uploaded images
-3. Issue #4 docs: add screenshots for image paste workflow
-4. Issue #12 roadmap: plan v0.2.0 local asset workflow
-5. Issue #7 maintenance: add release checklist for alpha versions
+- Issue #12: roadmap polish (in progress)
 
 ## Closed issues
 
-Issues #13, #11, #9, #8, #6, #5 are closed.
+All prior issues: #13, #11, #9, #8, #6, #5, #19, #10, #4 are closed.
+
+## Current milestone
+
+v0.2.2-alpha completed. Next: v0.3.0-alpha.
 
 ## Known limitations
 
-- Magic bytes validation is not implemented yet.
-- MIME consistency still needs review.
-- Local Git on Windows has shown HTTPS / lock instability.
-- Project remains early-stage alpha.
+- Screenshots not yet added to demo document
+- Migration --apply mode is not implemented
+- No web UI asset browser
+- CLI-first search
+- Local Git on Windows has shown HTTPS/lock instability
+- Project remains early-stage alpha
 
 ## Maintainer strategy
 
@@ -65,3 +69,4 @@ Prefer:
 - docs/agent/next-actions.md
 - docs/agent/operating-loop.md
 - docs/agent/git-recovery.md
+- ROADMAP.md

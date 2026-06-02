@@ -1,66 +1,85 @@
-# v0.2.0 Roadmap: Local Asset Workflow
+# v0.2.x Roadmap: Local Asset Workflow
 
-This roadmap describes planned work for `v0.2.0-alpha`. It is intentionally
-limited to local-first asset management improvements and does not promise cloud
-sync, collaboration, or large media pipelines.
+This roadmap describes the local-first asset management work completed across the v0.2.x alpha cycle.
 
 ## Goal
 
-Make pasted image assets easier to find, validate, and migrate while preserving
-the current local-first workflow.
+Make pasted image assets easier to find, validate, and migrate while preserving the current local-first workflow.
 
-## Scope
+## Completed
 
-### Asset Search by `image_id`
+### Asset Search by image_id (v0.2.0-alpha)
 
-- Add a way to look up an uploaded image record by its stable `image_id`.
-- Return the stored URL, MIME type, size, hash, and creation metadata.
-- Keep the existing upload response compatible.
+- Script: scripts/find-image-asset.py with --image-id flag
+- Returns stored URL, MIME type, size, sha256, and creation metadata
+- Existing upload response preserved
 
-### Metadata Filters
+### Sha256 Lookup (v0.2.0-alpha)
 
-- Add filters for common asset index fields such as MIME type, created date, and
-  note association when available.
-- Keep filtering read-only for the alpha release.
+- Search by --sha256 in find-image-asset.py
+- Duplicate sha256 detection in validate-image-asset-index.py
 
-### Image Index Validation Command
+### Metadata Filters (v0.2.0-alpha)
 
-- Add a command that checks JSONL syntax, required fields, duplicate
-  `image_id` values, missing files, and hash mismatches.
-- Report actionable errors without modifying files by default.
+- Filters for source, mime_type, and size_bytes
+- Read-only; does not modify index records
 
-### Migration Script
+### Image Index Validation CLI (v0.2.0-alpha)
 
-- Add a script for indexing existing uploaded images that predate the asset
-  index.
-- Require a dry-run mode before writing records.
+- Script: scripts/validate-image-asset-index.py
+- Checks JSONL syntax, required fields, duplicate image_id, duplicate sha256
+- Actionable error output without modifying files
 
-### Local-First Asset Workflow Polish
+### Upload Security Review (v0.2.0-alpha)
 
-- Improve documentation for runtime data location, git safety, and backup
-  expectations.
-- Add troubleshooting steps for local upload and asset index failures.
+- Security constraint verification script (verify-upload-security-constraints.py)
+- documented in docs/security-upload-review.md
 
-## Non-Goals
+### Magic Bytes Validation (v0.2.1-alpha)
 
-- No cloud storage integration in `v0.2.0-alpha`.
-- No account system or multi-user permissions.
-- No destructive cleanup command for uploaded files.
-- No automatic migration without a dry run.
+- Server-side content verification for PNG, JPEG, and WebP
+- MIME mismatch rejection with clear error messages
+- Real MIME type recorded in JSONL asset index
 
-## Acceptance Criteria
+### Migration Dry-Run (v0.2.2-alpha)
 
-- Maintainers can look up an image record by `image_id`.
-- Maintainers can validate the JSONL asset index from the command line.
-- Existing uploaded images can be previewed in a dry-run migration report.
-- README or demo docs explain the asset workflow in terms a new contributor can
-  follow.
-- CI or local verification covers the new validation command.
+- Script: scripts/migrate-existing-note-images.py
+- Dry-run only; no file writes
+- Reports missing records, duplicate sha256, duplicate image_id, broken URLs, malformed lines
 
-## Risks
+### Demo Documentation (merged post-v0.2.2)
 
-- JSONL records may reference files that were manually deleted.
-- Runtime data paths may differ across developer machines.
-- Migration code could accidentally index temporary or unsupported files if the
-  input directory is not constrained.
-- Future metadata fields should not make existing alpha records unreadable.
+- docs/demo-image-asset-workflow.md
+- Command-output style demo for the full asset workflow
+
+## Current limitations
+
+- Screenshots are pending
+- Migration --apply mode is not implemented
+- No web UI asset browser
+- Search is CLI-first
+- Runtime is local-only
+
+## Current asset workflow
+
+Paste arrow Upload arrow Index arrow Validate arrow Lookup arrow Filter arrow Migration dry-run
+
+## Completed sub-tasks
+
+- image paste upload
+- stable image_id generation
+- JSONL image asset index
+- asset index validation CLI
+- image lookup by image_id and sha256
+- metadata filters
+- upload endpoint security review
+- magic bytes validation
+- migration dry-run
+- demo documentation
+- Codex operating instructions
+
+## v0.3.0-alpha direction
+
+The next milestone targets a local image asset browser and search surface in the web UI.
+
+See ROADMAP.md for details.
