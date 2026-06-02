@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security policy
+    url: https://github.com/fengking20171209-web/FengVoice/security/policy
+    about: Please review the security policy before reporting sensitive issues.
+  - name: Maintainer workflow
+    url: https://github.com/fengking20171209-web/FengVoice/blob/main/docs/maintainer-workflow.md
+    about: Read the current maintainer workflow and release process.

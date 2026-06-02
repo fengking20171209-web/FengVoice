@@ -18,3 +18,13 @@ public/uploads/
 .DS_Store
 
 runtime/
+
+# Local OpenAI OSS application automation outputs
+OPENAI_CODEX_OSS_FORM_FIELDS.json
+OPENAI_CODEX_OSS_FORM_FIELDS_READY.md
+OPENAI_CODEX_OSS_SUBMIT_LOG.md
+OPENAI_CODEX_OSS_FILL_RESULT.md
+scripts/oss_submit.ps1
+scripts/openai_codex_oss_fill_form.js
+scripts/fill_chrome.js
+scripts/run_fill_chrome.ps1
