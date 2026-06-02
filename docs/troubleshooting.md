@@ -172,6 +172,31 @@ To validate a specific JSONL file:
 python scripts/validate-image-asset-index.py --index runtime/asset-index/note-images.jsonl
 ```
 
+### Find an indexed image asset
+
+- Symptom: maintainers need to inspect a specific uploaded image record by its
+  stable `image_id` or `sha256`.
+- Cause: the asset index is append-only JSONL, so manual lookup is inconvenient
+  once the file contains many records.
+- Fix: run the standalone lookup command:
+
+```powershell
+cd D:\Projects\FengVoice
+python scripts/find-image-asset.py --image-id img_example
+```
+
+To search by hash:
+
+```powershell
+python scripts/find-image-asset.py --sha256 <sha256>
+```
+
+For machine-readable output:
+
+```powershell
+python scripts/find-image-asset.py --image-id img_example --json
+```
+
 ### image_id Is Missing from Upload Response
 
 - Symptom: the upload API response includes a URL but no `image_id`.

@@ -52,6 +52,10 @@ jobs:
         working-directory: .
         run: python scripts/verify-image-asset-index-validation.py
 
+      - name: Verify image asset lookup CLI
+        working-directory: .
+        run: python scripts/verify-find-image-asset.py
+
       - name: Verify image asset index
         working-directory: .
         run: node scripts/verify-image-asset-index.js
