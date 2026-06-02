@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from asset_index import create_note_image_record
 from asset_index import create_note_image_record
+from asset_search import list_assets, find_asset_by_image_id, read_asset_index
 
 MEMORY_BRIDGE_DIR = Path(__file__).resolve().parents[1] / "memory-bridge"
 sys.path.insert(0, str(MEMORY_BRIDGE_DIR))
@@ -68,6 +69,23 @@ class ImageUploadResponse(BaseModel):
     alt: str
     image_id: str
     image_id: str
+
+
+class AssetRecord(BaseModel):
+    image_id: str
+    public_url: str
+    sha256: str | None = None
+    mime_type: str | None = None
+    size_bytes: int | None = None
+    source: str | None = None
+    created_at: str | None = None
+    note_id: str | None = None
+
+
+class AssetListResponse(BaseModel):
+    items: list[AssetRecord]
+    count: int
+    warnings: list[str]
 
 
 def now_iso() -> str:
@@ -126,36 +144,6 @@ def safe_extension(filename: str, content_type: str) -> str:
         "image/webp": ".webp",
     }.get(content_type, ".png")
 
-# Magic bytes signatures for supported image formats
-_MAGIC_PNG = b"""\x89PNG\r\n\x1a\n"""
-_MAGIC_JPEG = b"""\xff\xd8\xff"""
-_MAGIC_WEBP_RIFF = b"RIFF"
-_MAGIC_WEBP_HEADER = b"WEBP"
-
-
-def detect_image_format(data: bytes) -> str | None:
-    if len(data) < 4:
-        return None
-    if data[:8] == _MAGIC_PNG:
-        return "image/png"
-    if data[:3] == _MAGIC_JPEG:
-        return "image/jpeg"
-    if data[:4] == _MAGIC_WEBP_RIFF and len(data) >= 12 and data[8:12] == _MAGIC_WEBP_HEADER:
-        return "image/webp"
-    return None
-
-
-def validate_upload_magic_bytes(content_type: str, data: bytes) -> str:
-    detected = detect_image_format(data)
-    if detected is None:
-        raise HTTPException(status_code=400, detail="Uploaded file content does not match PNG, JPEG, or WebP image format")
-    if detected != content_type:
-        raise HTTPException(status_code=400, detail=f"Declared MIME type '{content_type}' does not match detected image format '{detected}'")
-    return detected
-
-
-
-
 
 def absolute_upload_url(request: Request, relative_path: str) -> str:
     return str(request.url_for("uploads", path=relative_path.removeprefix("/uploads/")))
@@ -176,20 +164,13 @@ async def upload_note_image(request: Request, file: UploadFile = File(...)) -> I
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image uploads are allowed")
 
-    first_chunk = await file.read(1024 * 1024)
-    if not first_chunk:
-        raise HTTPException(status_code=400, detail="Uploaded image is empty")
-
-    detected_mime = validate_upload_magic_bytes(file.content_type, first_chunk)
-
-    extension = safe_extension(file.filename or "", detected_mime)
+    extension = safe_extension(file.filename or "", file.content_type)
     filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid4().hex}{extension}"
     target = NOTE_UPLOAD_DIR / filename
 
-    size = len(first_chunk)
+    size = 0
     try:
         with target.open("wb") as output:
-            output.write(first_chunk)
             while chunk := await file.read(1024 * 1024):
                 size += len(chunk)
                 if size > MAX_UPLOAD_BYTES:
@@ -211,9 +192,45 @@ async def upload_note_image(request: Request, file: UploadFile = File(...)) -> I
         public_url=public_url,
         alt="pasted image",
         source="note_paste",
-        mime_type=detected_mime,
     )
     return ImageUploadResponse(url=public_url, alt="pasted image", image_id=record["image_id"])
+
+
+
+
+
+@app.get("/api/assets/images", response_model=AssetListResponse)
+def list_image_assets(
+    image_id: str | None = None,
+    sha256: str | None = None,
+    source: str | None = None,
+    mime_type: str | None = None,
+    min_size: int | None = None,
+    max_size: int | None = None,
+    limit: int = 100,
+) -> AssetListResponse:
+    result = list_assets(
+        image_id=image_id,
+        sha256=sha256,
+        source=source,
+        mime_type=mime_type,
+        min_size=min_size,
+        max_size=max_size,
+        limit=limit,
+    )
+    return AssetListResponse(**result)
+
+
+@app.get("/api/assets/images/{image_id}", response_model=AssetRecord)
+def get_image_asset(image_id: str) -> AssetRecord:
+    records, warnings = read_asset_index()
+    record = find_asset_by_image_id(records, image_id)
+    if record is None:
+        detail = "Image asset not found"
+        if warnings:
+            detail += ": " + "; ".join(warnings)
+        raise HTTPException(status_code=404, detail=detail)
+    return AssetRecord(**record)
 
 
 @app.get("/api/notes", response_model=list[Note])

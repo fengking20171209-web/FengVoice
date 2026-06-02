@@ -216,11 +216,11 @@ Response:
 
 ### Phase 1: read-only API endpoint
 
-- Add GET /api/assets/images and GET /api/assets/images/{image_id} to the backend.
-- Reuse filtering logic from find-image-asset.py.
-- Add basic pagination.
-- No frontend changes yet.
-- Add API tests.
+- [DONE] Add GET /api/assets/images and GET /api/assets/images/{image_id} to the backend.
+- [DONE] Reuse filtering logic from find-image-asset.py.
+- [DONE] Add basic pagination.
+- [DONE] No frontend changes yet.
+- [DONE] Add API tests (scripts/verify-image-asset-api.py).
 
 ### Phase 2: browser UI
 
