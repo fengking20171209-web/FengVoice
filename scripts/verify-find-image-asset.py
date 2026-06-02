@@ -28,8 +28,8 @@ def write_jsonl(path: Path, records: list[dict] | list[str]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def record(image_id: str, sha256: str) -> dict:
-    return {
+def record(image_id: str, sha256: str, **overrides: object) -> dict:
+    item = {
         "image_id": image_id,
         "public_url": f"http://testserver/uploads/notes/{image_id}.png",
         "sha256": sha256,
@@ -37,6 +37,8 @@ def record(image_id: str, sha256: str) -> dict:
         "size_bytes": 8,
         "source": "note_paste",
     }
+    item.update(overrides)
+    return item
 
 
 def parse_json(result: subprocess.CompletedProcess[str]) -> dict:
@@ -67,6 +69,71 @@ def main() -> None:
         assert by_sha.returncode == 0, payload
         assert payload["result"] == "FOUND", payload
         assert payload["matches"][0]["image_id"] == "img_002", payload
+
+        filtered_index = temp_dir / "filtered.jsonl"
+        missing_size = record("img_missing_size", "f" * 64)
+        del missing_size["size_bytes"]
+        write_jsonl(
+            filtered_index,
+            [
+                record("img_png_small", "1" * 64, mime_type="image/png", size_bytes=10, source="note_paste"),
+                record("img_webp_large", "2" * 64, mime_type="image/webp", size_bytes=600, source="note_paste"),
+                record("img_manual", "3" * 64, mime_type="image/png", size_bytes=300, source="manual_upload"),
+                missing_size,
+            ],
+        )
+
+        payload = parse_json(run_lookup("--index", str(filtered_index), "--source", "note_paste", "--json"))
+        assert payload["result"] == "FOUND", payload
+        assert {match["image_id"] for match in payload["matches"]} == {
+            "img_png_small",
+            "img_webp_large",
+            "img_missing_size",
+        }, payload
+
+        payload = parse_json(run_lookup("--index", str(filtered_index), "--mime-type", "image/png", "--json"))
+        assert payload["result"] == "FOUND", payload
+        assert {match["image_id"] for match in payload["matches"]} == {
+            "img_png_small",
+            "img_manual",
+            "img_missing_size",
+        }, payload
+
+        payload = parse_json(run_lookup("--index", str(filtered_index), "--min-size", "100", "--json"))
+        assert payload["result"] == "FOUND", payload
+        assert {match["image_id"] for match in payload["matches"]} == {
+            "img_webp_large",
+            "img_manual",
+        }, payload
+        assert payload["warnings"], payload
+        assert "missing size_bytes" in payload["warnings"][0]["message"], payload
+
+        payload = parse_json(run_lookup("--index", str(filtered_index), "--max-size", "100", "--json"))
+        assert payload["result"] == "FOUND", payload
+        assert [match["image_id"] for match in payload["matches"]] == ["img_png_small"], payload
+
+        payload = parse_json(
+            run_lookup(
+                "--index",
+                str(filtered_index),
+                "--source",
+                "note_paste",
+                "--mime-type",
+                "image/webp",
+                "--min-size",
+                "500",
+                "--max-size",
+                "700",
+                "--json",
+            )
+        )
+        assert payload["result"] == "FOUND", payload
+        assert [match["image_id"] for match in payload["matches"]] == ["img_webp_large"], payload
+
+        no_filter_match = run_lookup("--index", str(filtered_index), "--source", "unknown", "--json")
+        payload = parse_json(no_filter_match)
+        assert no_filter_match.returncode == 1, payload
+        assert payload["result"] == "NOT_FOUND", payload
 
         not_found = run_lookup("--index", str(index), "--image-id", "img_missing", "--json")
         payload = parse_json(not_found)
