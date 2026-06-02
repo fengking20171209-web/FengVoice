@@ -22,25 +22,34 @@ The current alpha release focuses on a practical creator workflow:
 
 ## Quick Start
 
-### API
+Start the API and web app in separate terminals so the frontend can talk to the
+local backend during development.
 
-`powershell
+### 1. Start the API
+
+```powershell
 cd services/api
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-`
+```
 
-### Web
+Confirm the API is running at `http://localhost:8000/health`.
+
+### 2. Start the web app
 
 ```powershell
 cd apps/web
-npm install
+npm ci
 npm run dev -- --host 0.0.0.0 --port 3000
 ```
 
-Open http://localhost:3000. The API health endpoint is http://localhost:8000/health.
+Open `http://localhost:3000`.
+
+If you start the API on a different port, set `VITE_API_BASE_URL` before
+starting the web app so the frontend points to the correct backend.
 
 ### Docker Compose
 
