@@ -28,3 +28,9 @@ scripts/oss_submit.ps1
 scripts/openai_codex_oss_fill_form.js
 scripts/fill_chrome.js
 scripts/run_fill_chrome.ps1
+
+# Local/private application and release artifacts
+OPENAI*
+GITHUB_RELEASE_*.md
+_local/
+.git_old/
