@@ -2,133 +2,99 @@
 
 ## P0
 
-### Protect the current worktree and avoid accidental commits
+### Record the v0.3.1-alpha release state
 
-Goal: Keep local WIP, local snapshots, and protected directories out of Git.
+Goal: Keep the agent context aligned with the published GitHub mainline audio
+release.
 
 Success criteria:
+- document `v0.3.1-alpha` as the latest GitHub mainline release
+- preserve `v0.3.0-alpha` as the historical Gitee-side audio experiment tag
+- keep the update documentation-only
 - do not commit `_local/`, `runtime/`, `public/uploads/`, `OPENAI*`, `vault/`,
   or `.git_old/`
-- do not include unfinished `services/api/main.py` WIP in documentation commits
-- keep the old `codex/api-image-asset-readonly` branch parked until the mainline
-  is coherent
 
-### Merge the docs refresh PR
+### Keep the mainline coherent
 
-Goal: Land the refreshed project-state and next-actions docs from a clean
-branch.
+Goal: Treat `origin/main` after `v0.3.1-alpha` as the clean alpha baseline.
 
 Success criteria:
-- only `docs/agent/project-state.md` and `docs/agent/next-actions.md` are
-  changed
-- Codex workflow documentation verification passes
-- PR clearly states this is documentation-only
+- avoid merging or cherry-picking broad Gitee mainline work
+- avoid moving or deleting historical tags
+- keep release follow-up PRs small and reviewable
+- run focused validation before any behavior-changing PR
 
-### Resolve the GitHub/Gitee main divergence plan
+### Avoid using the parked dirty API branch directly
 
-Goal: Decide how to integrate Gitee v0.3 audio note capture without overwriting
-the GitHub OSS mainline.
-
-Success criteria:
-- document GitHub-only work
-- document Gitee-only audio work
-- keep GitHub `origin/main` as the public OSS authority unless the maintainer
-  explicitly chooses otherwise
-- avoid `merge gitee/main` and avoid cherry-picking the broad Gitee mainline
-  commit wholesale
-
-### Decide how to preserve or park `services/api/main.py` WIP
-
-Goal: Protect the read-only asset API work until it can restart from a clean
-mainline.
+Goal: Protect the old read-only asset API WIP until it can be restarted safely.
 
 Success criteria:
-- keep the saved API patch available locally
-- do not continue API implementation on the old dirty branch
-- restart from a clean branch after audio integration planning
+- keep `codex/api-image-asset-readonly` parked
+- do not rebase or merge that dirty branch into the new mainline
+- reuse only saved patch ideas that still fit the current codebase
+- restart read-only asset API work from clean `origin/main`
 
 ## P1
 
-### Manually port Gitee v0.3 audio note capture
+### Prepare Tencent Cloud deployment
 
-Goal: Bring the useful Gitee audio note capture work into GitHub main through
-focused PRs.
-
-Success criteria:
-- manually port behavior instead of cherry-picking `061942b`
-- preserve v0.2.1 upload security hardening
-- preserve v0.2.2 migration dry-run work
-- preserve image paste upload, Markdown image insertion, stable `image_id`, and
-  JSONL asset index append behavior
-
-### Split audio integration if needed
-
-Goal: Keep audio integration reviewable.
-
-Candidate split:
-- PR A: audio backend/API integration
-- PR B: audio frontend/UI integration
+Goal: Turn the v0.3.1-alpha mainline into a deployable alpha baseline.
 
 Success criteria:
-- backend and frontend changes can be reviewed independently if the combined
-  scope is too large
-- focused validation is run for each PR
+- confirm Docker and runtime configuration assumptions
+- document deployment commands and rollback notes
+- keep credentials, tokens, runtime data, and uploads out of Git
+- verify API and web build from the selected release baseline
 
-### Restart read-only image asset API
+### Refresh deployment runbook and Docker readiness
 
-Goal: Resume the read-only image asset API from a clean branch after audio
-integration.
+Goal: Make deployment steps reproducible before publishing wider usage notes.
 
 Success criteria:
-- branch from the selected clean mainline
-- apply or rewrite only the protected API WIP that still fits the new base
+- document environment variables and local-first storage assumptions
+- verify service startup path
+- note what is intentionally not production-ready
+- keep early-stage alpha limitations visible
+
+### Restart read-only image/audio asset API
+
+Goal: Resume asset API work from the clean v0.3.1-alpha mainline.
+
+Success criteria:
+- create a new branch from clean `origin/main`
+- implement only the smallest read-only API surface needed next
+- preserve image paste upload, image JSONL append, audio JSONL append, and
+  existing validation scripts
 - add focused API validation
 
 ## P2
 
-### Tencent Cloud deployment after mainline coherence
+### Capture real screenshots for audio and image workflow demos
 
-Goal: Resume deployment work only after the public mainline and integration plan
-are stable.
-
-Success criteria:
-- selected mainline is coherent
-- deployment docs match the selected release scope
-- no local runtime, upload, credential, or draft files are committed
-
-### v0.3 asset browser implementation
-
-Goal: Implement the designed asset browser after API and mainline work are
-stable.
+Goal: Add browser evidence once the deployable alpha baseline is stable.
 
 Success criteria:
-- design scope is confirmed
-- API surface is stable
-- frontend branch starts from a clean mainline
-
-### Real screenshots for demo documentation
-
-Goal: Capture real browser evidence for the demo documentation when the app
-flow is stable.
-
-Success criteria:
-- capture note editor before paste
-- capture pasted Markdown image URL
-- capture uploaded image URL
-- capture JSONL index record
+- capture note image paste workflow
+- capture audio recording and uploaded audio link insertion
 - capture validation output
-- capture lookup/filter output
-- capture migration dry-run output
 - avoid committing `runtime/` or `public/uploads/`
 
-### Add local ignore protection in a separate PR if needed
+### Polish audio note documentation
 
-Goal: Reduce accidental commit risk from local worktree and recovery folders.
-
-Candidate entries:
-- `_local/`
-- `.git_old/`
+Goal: Explain the intentionally minimal audio workflow without overstating
+production readiness.
 
 Success criteria:
-- keep this separate from the docs refresh PR
-- verify repository safety after updating ignore rules
+- describe backend upload behavior
+- describe separate audio JSONL index
+- document current browser recording limitations
+- document that transcript and advanced audio library features are future work
+
+### Plan transcript and AI asset library work
+
+Goal: Keep future audio intelligence work separate from the alpha release.
+
+Success criteria:
+- define transcript scope separately
+- define AI asset library scope separately
+- avoid mixing deployment, transcript, and asset browser work into one PR
