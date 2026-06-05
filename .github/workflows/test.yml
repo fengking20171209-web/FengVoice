@@ -27,7 +27,7 @@ jobs:
 
       - name: Python lint
         working-directory: services/api
-        run: python -m py_compile main.py asset_index.py
+        run: python -m py_compile main.py asset_index.py audio_assets.py
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -47,6 +47,10 @@ jobs:
       - name: Verify image paste upload
         working-directory: .
         run: node scripts/verify-image-paste-upload.js
+
+      - name: Verify audio upload
+        working-directory: .
+        run: python scripts/verify-audio-upload.py
 
       - name: Verify image migration dry-run
         working-directory: .
