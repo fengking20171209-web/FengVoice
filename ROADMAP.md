@@ -1,6 +1,6 @@
 # FengVoice Public Roadmap
 
-> Last updated: 2026-06-02
+> Last updated: 2026-06-05
 
 ## Releases
 
@@ -11,6 +11,8 @@
 | v0.2.0-alpha | Asset index validation, lookup, and metadata filters |
 | v0.2.1-alpha | Upload security hardening with magic bytes validation |
 | v0.2.2-alpha | Image asset migration dry-run |
+| v0.3.0-alpha | Historical Gitee-side audio experiment tag |
+| v0.3.1-alpha | Audio note capture on the GitHub mainline |
 
 ## Completed capabilities
 
@@ -23,6 +25,10 @@
 - Upload endpoint security review
 - Magic bytes validation for PNG, JPEG, WebP
 - Migration dry-run for existing uploaded images (migrate-existing-note-images.py)
+- Audio note upload backend API
+- Separate audio JSONL index
+- Minimal browser audio recording UI
+- Uploaded audio link insertion in notes
 - Image asset workflow demo document
 - Codex operating instructions (AGENTS.md, docs/agent/)
 - CI / verification suite for asset index, lookup, paste upload, and security constraints
@@ -33,23 +39,26 @@
 - Migration --apply mode is not implemented
 - No web UI asset browser yet
 - Asset search is CLI-first, not web UI
+- Audio recording UI is intentionally minimal
+- No transcript or advanced audio library workflow yet
 - No cloud storage or multi-user support
 - Project remains early-stage alpha
 
-## Next milestone: v0.3.0-alpha
+## Next milestone: deployable alpha baseline
 
 ### Direction
 
-Local image asset browser and search surface.
+Tencent Cloud deployment preparation and a small read-only asset API restarted
+from clean `origin/main`.
 
 ### Candidate scope
 
-- Web UI for browsing indexed uploaded images
-- Search by image_id
-- Search and filter by metadata
-- Display public URL, MIME type, size, and sha256
-- Link image records back to notes (if note_id support is added)
-- Keep CLI workflow as fallback
+- Deployment runbook and Docker readiness review
+- API and web startup verification from the v0.3.1-alpha baseline
+- Read-only image/audio asset API design from a clean branch
+- Preserve image paste, audio upload, JSONL append, and existing validation
+  workflows
+- Keep CLI workflow as fallback for asset lookup
 
 ### Candidate non-goals
 
@@ -58,6 +67,7 @@ Local image asset browser and search surface.
 - No external user analytics
 - No automatic migration writes (--apply reserved for future design)
 - No destructive changes to runtime/ or public/uploads/
+- No transcript feature in this milestone
 
 ## Earlier phases
 
