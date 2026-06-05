@@ -67,6 +67,13 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def audio_stored_path(file_path: Path) -> str:
+    try:
+        return str(file_path.relative_to(ROOT_DIR))
+    except ValueError:
+        return file_path.name
+
+
 def create_note_audio_record(
     *,
     file_path: Path,
@@ -83,7 +90,7 @@ def create_note_audio_record(
         "note_id": note_id,
         "public_url": public_url,
         "stored_filename": file_path.name,
-        "stored_path": str(file_path.relative_to(ROOT_DIR)),
+        "stored_path": audio_stored_path(file_path),
         "sha256": sha256_file(file_path),
         "mime_type": mime_type,
         "size_bytes": stat.st_size,
