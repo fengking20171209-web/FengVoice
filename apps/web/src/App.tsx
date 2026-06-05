@@ -2,10 +2,14 @@ import { type ClipboardEvent, useCallback, useEffect, useMemo, useRef, useState 
 import {
   CheckCircle2,
   FileText,
+  Mic,
+  MicOff,
   Plus,
   Save,
   Search,
+  Square,
   Trash2,
+  Upload,
   Wifi,
   WifiOff,
   X,
@@ -18,6 +22,7 @@ import {
   type Note,
   type NoteDraft,
   updateNote,
+  uploadAudio,
   uploadNoteImage,
 } from "./api";
 import {
@@ -27,6 +32,11 @@ import {
   markdownImage,
   toAbsoluteImageUrl,
 } from "./imagePaste";
+import {
+  isAudioRecordingSupported,
+  startAudioRecording,
+  type AudioRecordingHandle,
+} from "./audioRecord";
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "offline";
 type Theme = "comfort" | "warm" | "light";
@@ -78,6 +88,14 @@ export function App() {
   const draftRef = useRef(draft);
   const dirtyRef = useRef(false);
   const persistDraftRef = useRef<() => Promise<boolean>>(async () => true);
+  const audioRecordingSupported = isAudioRecordingSupported();
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const recordingHandleRef = useRef<AudioRecordingHandle | null>(null);
+  const recordingTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     selectedIdRef.current = selectedId;
@@ -105,6 +123,19 @@ export function App() {
       if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
+      if (recordingHandleRef.current) void recordingHandleRef.current.stop().catch(() => undefined);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    };
+  }, [audioPreviewUrl]);
 
   function showToast(nextToast: Toast) {
     setToast(nextToast);
@@ -231,8 +262,96 @@ export function App() {
     }
   }
 
+  async function handleStartRecording() {
+    try {
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(null);
+      setAudioBlob(null);
+      setRecordingTime(0);
+      recordingHandleRef.current = await startAudioRecording();
+      setIsRecording(true);
+      recordingTimerRef.current = window.setInterval(() => {
+        setRecordingTime((current) => current + 1);
+      }, 1000);
+    } catch (cause) {
+      console.error("Audio recording failed to start", cause);
+      showToast({ tone: "error", message: "Audio recording is unavailable" });
+      setError("Audio recording is unavailable. Check browser support and microphone permission.");
+    }
+  }
+
+  async function handleStopRecording() {
+    const handle = recordingHandleRef.current;
+    if (!handle) return;
+
+    try {
+      const blob = await handle.stop();
+      setAudioBlob(blob);
+      setAudioPreviewUrl(URL.createObjectURL(blob));
+    } catch (cause) {
+      console.error("Audio recording failed to stop", cause);
+      showToast({ tone: "error", message: "Audio recording failed" });
+      setError("Audio recording failed. Please try again.");
+    } finally {
+      recordingHandleRef.current = null;
+      setIsRecording(false);
+      if (recordingTimerRef.current) {
+        window.clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  }
+
+  async function handleUploadAudio() {
+    if (!audioBlob) return;
+
+    setUploadingAudio(true);
+    try {
+      const uploaded = await uploadAudio(audioBlob);
+      const start = contentRef.current?.selectionStart;
+      const end = contentRef.current?.selectionEnd;
+      const markdown = `[Audio note](${uploaded.public_url})`;
+      updateDraft({
+        content: insertMarkdownAtSelection(draftRef.current.content, markdown, start, end),
+      });
+      showToast({ tone: "success", message: "Audio uploaded" });
+      setAudioBlob(null);
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(null);
+      window.requestAnimationFrame(() => contentRef.current?.focus());
+    } catch (cause) {
+      console.error("Audio upload failed", cause);
+      showToast({ tone: "error", message: "Audio upload failed" });
+      setError("Audio upload failed. Please try again.");
+    } finally {
+      setUploadingAudio(false);
+    }
+  }
+
+  function formatRecordingTime(seconds: number) {
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${rest.toString().padStart(2, "0")}`;
+  }
+
+  function resetAudioCapture() {
+    if (recordingTimerRef.current) {
+      window.clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (recordingHandleRef.current) void recordingHandleRef.current.stop().catch(() => undefined);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    recordingHandleRef.current = null;
+    setIsRecording(false);
+    setRecordingTime(0);
+    setAudioBlob(null);
+    setAudioPreviewUrl(null);
+    setUploadingAudio(false);
+  }
+
   async function newNote() {
     await persistDraft();
+    resetAudioCapture();
     const note = localNote();
     setNotes((current) => [note, ...current]);
     setSelectedId(note.id);
@@ -249,6 +368,7 @@ export function App() {
   async function selectNote(note: Note) {
     if (note.id === selectedIdRef.current) return;
     await persistDraft();
+    resetAudioCapture();
     setSelectedId(note.id);
     setDraft(toDraft(note));
     draftRef.current = toDraft(note);
@@ -266,6 +386,7 @@ export function App() {
       setNotes((current) => current.filter((note) => note.id !== id));
       setSelectedId(null);
       setDraft(emptyDraft());
+      resetAudioCapture();
       setDirty(false);
       dirtyRef.current = false;
       setSaveState("idle");
@@ -360,6 +481,21 @@ export function App() {
               {saveState === "error" && "保存失败"}
               {saveState === "idle" && (dirty ? "尚未保存" : "状态：就绪")}
             </span>
+            {audioRecordingSupported && !isRecording && (
+              <button className="icon-button" onClick={() => void handleStartRecording()} disabled={!selectedId} title="Record audio">
+                <Mic size={18} />
+              </button>
+            )}
+            {isRecording && (
+              <button className="icon-button recording" onClick={() => void handleStopRecording()} title="Stop recording">
+                <Square size={18} />
+              </button>
+            )}
+            {!audioRecordingSupported && (
+              <button className="icon-button" disabled title="Audio recording is not supported">
+                <MicOff size={18} />
+              </button>
+            )}
             {selectedId && (
               <button className="icon-button danger" onClick={() => void removeNote()} title="删除笔记">
                 <Trash2 size={18} />
@@ -412,6 +548,21 @@ export function App() {
             placeholder="记录想法、决策、内容草稿……"
             disabled={!selectedId}
           />
+          {isRecording && (
+            <div className="recording-indicator">
+              <span className="recording-dot" />
+              <span>Recording {formatRecordingTime(recordingTime)}</span>
+            </div>
+          )}
+          {audioPreviewUrl && !isRecording && (
+            <div className="audio-preview">
+              <audio controls src={audioPreviewUrl} />
+              <button className="primary-button" onClick={() => void handleUploadAudio()} disabled={uploadingAudio}>
+                <Upload size={15} />
+                {uploadingAudio ? "Uploading" : "Upload audio"}
+              </button>
+            </div>
+          )}
           {selectedNote?.local && <p className="local-hint">这条笔记仍保存在当前页面中，API 恢复后点击“保存笔记”即可同步。</p>}
         </section>
       </main>

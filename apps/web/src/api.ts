@@ -21,6 +21,14 @@ export type UploadedImage = {
   image_id: string;
 };
 
+export type UploadedAudio = {
+  audio_id: string;
+  public_url: string;
+  mime_type: string;
+  size_bytes: number;
+  sha256: string;
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
   if (!response.ok) {
@@ -61,6 +69,26 @@ export function uploadNoteImage(file: File) {
   const body = new FormData();
   body.append("file", file);
   return request<UploadedImage>("/api/uploads/images", {
+    method: "POST",
+    body,
+  });
+}
+
+export function uploadAudio(blob: Blob) {
+  const mimeType = blob.type.split(";")[0] || "audio/webm";
+  const extension = mimeType.includes("ogg")
+    ? "ogg"
+    : mimeType.includes("mp4")
+      ? "m4a"
+      : mimeType.includes("wav")
+        ? "wav"
+        : mimeType.includes("mpeg")
+          ? "mp3"
+          : "webm";
+  const file = new File([blob], `recording-${Date.now()}.${extension}`, { type: mimeType });
+  const body = new FormData();
+  body.append("file", file);
+  return request<UploadedAudio>("/api/notes/audio", {
     method: "POST",
     body,
   });
