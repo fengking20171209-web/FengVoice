@@ -18,6 +18,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from audio_assets import ALLOWED_AUDIO_MIME_TYPES
+from audio_assets import AUDIO_UPLOAD_DIR
+from audio_assets import MAX_AUDIO_UPLOAD_BYTES
+from audio_assets import create_note_audio_record
+from audio_assets import ensure_audio_dirs
+from audio_assets import next_audio_filename
+from audio_assets import validate_audio_signature
 from asset_index import create_note_image_record
 from asset_index import create_note_image_record
 
@@ -37,6 +44,7 @@ PUBLIC_DIR = ROOT_DIR / "public"
 NOTE_UPLOAD_DIR = PUBLIC_DIR / "uploads" / "notes"
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 NOTE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+ensure_audio_dirs()
 
 app = FastAPI(title="FengVoice API", version="0.1.0")
 app.add_middleware(
@@ -70,6 +78,14 @@ class ImageUploadResponse(BaseModel):
     image_id: str
 
 
+class AudioUploadResponse(BaseModel):
+    audio_id: str
+    public_url: str
+    mime_type: str
+    size_bytes: int
+    sha256: str
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -83,6 +99,7 @@ def connect() -> sqlite3.Connection:
 
 def init_db() -> None:
     NOTE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_audio_dirs()
     with closing(connect()) as connection:
         connection.execute(
             """
@@ -214,6 +231,51 @@ async def upload_note_image(request: Request, file: UploadFile = File(...)) -> I
         mime_type=detected_mime,
     )
     return ImageUploadResponse(url=public_url, alt="pasted image", image_id=record["image_id"])
+
+
+@app.post("/api/notes/audio", response_model=AudioUploadResponse)
+async def upload_note_audio(request: Request, file: UploadFile = File(...)) -> AudioUploadResponse:
+    if not file.content_type or file.content_type not in ALLOWED_AUDIO_MIME_TYPES:
+        raise HTTPException(status_code=400, detail="Only supported audio uploads are allowed")
+
+    first_chunk = await file.read(1024 * 1024)
+    if not first_chunk:
+        raise HTTPException(status_code=400, detail="Uploaded audio is empty")
+
+    if not validate_audio_signature(file.content_type, first_chunk):
+        raise HTTPException(status_code=400, detail="Uploaded file content does not match declared audio MIME type")
+
+    filename = next_audio_filename(file.content_type)
+    target = AUDIO_UPLOAD_DIR / filename
+    size = len(first_chunk)
+
+    try:
+        with target.open("wb") as output:
+            output.write(first_chunk)
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > MAX_AUDIO_UPLOAD_BYTES:
+                    output.close()
+                    target.unlink(missing_ok=True)
+                    raise HTTPException(status_code=413, detail="Audio upload is limited to 50MB")
+                output.write(chunk)
+    finally:
+        await file.close()
+
+    relative_url = f"/uploads/audio/{filename}"
+    public_url = absolute_upload_url(request, relative_url)
+    record = create_note_audio_record(
+        file_path=target,
+        public_url=public_url,
+        mime_type=file.content_type,
+    )
+    return AudioUploadResponse(
+        audio_id=record["audio_id"],
+        public_url=record["public_url"],
+        mime_type=record["mime_type"],
+        size_bytes=record["size_bytes"],
+        sha256=record["sha256"],
+    )
 
 
 @app.get("/api/notes", response_model=list[Note])
