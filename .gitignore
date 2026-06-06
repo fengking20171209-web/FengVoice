@@ -4,6 +4,7 @@
 .venv/
 __pycache__/
 *.pyc
+*.py[cod]
 *.db
 *.db-journal
 *.db-shm
@@ -13,11 +14,13 @@ tmp-*.log
 .chrome-test-profile/
 node_modules/
 dist/
+.vite/
 public/uploads/
 *.tsbuildinfo
 .DS_Store
 
 runtime/
+data/
 
 # Local OpenAI OSS application automation outputs
 OPENAI_CODEX_OSS_FORM_FIELDS.json
