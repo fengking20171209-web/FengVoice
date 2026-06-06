@@ -32,6 +32,7 @@ import {
   markdownImage,
   toAbsoluteImageUrl,
 } from "./imagePaste";
+import { appendImageBlock, createEmptyRichNote, parseRichNoteContent, serializeRichNoteContent } from "./richNote";
 import {
   isAudioRecordingSupported,
   startAudioRecording,
@@ -263,6 +264,35 @@ export function App() {
     }
   }
 
+  async function handleRichNoteImagePaste(imageFile: File) {
+    if (!selectedIdRef.current) return;
+
+    try {
+      const uploaded = await uploadNoteImage(imageFile);
+      const url = uploaded.url; // relative: /uploads/notes/xxx.png
+      const alt = imageAltText(uploaded, imageFile);
+      const currentContent = draftRef.current.content;
+      let parsed: ReturnType<typeof parseRichNoteContent>;
+      try {
+        parsed = currentContent ? JSON.parse(currentContent) : null;
+      } catch {
+        parsed = null;
+      }
+      if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.blocks)) {
+        parsed = createEmptyRichNote();
+      }
+      const nextContent = serializeRichNoteContent(
+        appendImageBlock(parsed, { url, alt, image_id: uploaded.image_id }),
+      );
+      updateDraft({ content: nextContent });
+      showToast({ tone: "success", message: "图片上传成功" });
+    } catch (cause) {
+      console.error("Rich note image paste failed", cause);
+      showToast({ tone: "error", message: "图片上传失败，请重试" });
+      setError("图片上传失败，请重试");
+    }
+  }
+
   async function handleStartRecording() {
     try {
       if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
@@ -350,20 +380,21 @@ export function App() {
     setUploadingAudio(false);
   }
 
-  async function newNote() {
+  async function newNote(type = "general") {
     await persistDraft();
     resetAudioCapture();
-    const note = localNote();
+    const note = { ...localNote(), note_type: type };
     setNotes((current) => [note, ...current]);
     setSelectedId(note.id);
-    setDraft(toDraft(note));
-    draftRef.current = toDraft(note);
+    const draft = toDraft(note);
+    setDraft(draft);
+    draftRef.current = draft;
     setDirty(true);
     dirtyRef.current = true;
     setSaveState("saving");
     setError("");
     focusTitleRef.current = true;
-    await persistDraft(note.id, toDraft(note));
+    await persistDraft(note.id, draft);
   }
 
   async function selectNote(note: Note) {
@@ -546,6 +577,7 @@ export function App() {
             <RichNoteEditor
               content={draft.content}
               onChange={(serialized) => updateDraft({ content: serialized })}
+              onImagePaste={handleRichNoteImagePaste}
             />
           ) : (
             <textarea
