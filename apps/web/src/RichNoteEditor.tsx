@@ -1,5 +1,8 @@
 import { useMemo } from "react";
 import {
+  firstImageFromClipboard,
+} from "./imagePaste";
+import {
   parseRichNoteContent,
   serializeRichNoteContent,
   createEmptyRichNote,
@@ -9,6 +12,7 @@ import {
 export type RichNoteEditorProps = {
   content: string;
   onChange: (serializedContent: string) => void;
+  onImagePaste?: (file: File) => Promise<void>;
 };
 
 const FALLBACK_MESSAGE =
@@ -27,7 +31,7 @@ const FALLBACK_MESSAGE =
  * v1 key strategy: `{block.type}-{index}`. No persisted block id in JSON.
  */
 export function RichNoteEditor(props: RichNoteEditorProps) {
-  const { content, onChange } = props;
+  const { content, onChange, onImagePaste } = props;
 
   // Parse content once per string identity change.
   // Returns RichNoteContentV1 for valid / empty content, or null for invalid.
@@ -70,7 +74,16 @@ export function RichNoteEditor(props: RichNoteEditorProps) {
   }
 
   return (
-    <div className="rich-note-editor">
+    <div
+      className="rich-note-editor"
+      onPaste={(event) => {
+        if (!onImagePaste) return;
+        const imageFile = firstImageFromClipboard(event.clipboardData?.items);
+        if (!imageFile) return;
+        event.preventDefault();
+        void onImagePaste(imageFile);
+      }}
+    >
       {richContent.blocks.map((block, index) => (
         <div className="rich-note-block" key={`${block.type}-${index}`}>
           {block.type === "paragraph" ? (
@@ -84,6 +97,13 @@ export function RichNoteEditor(props: RichNoteEditorProps) {
               className="rich-note-image"
               src={block.url}
               alt={block.alt}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                const fallback = document.createElement("div");
+                fallback.className = "rich-note-image-fallback";
+                fallback.textContent = `⚠ Image block: ${block.alt || "pasted image"}`;
+                e.currentTarget.parentElement?.replaceChild(fallback, e.currentTarget);
+              }}
             />
           )}
         </div>

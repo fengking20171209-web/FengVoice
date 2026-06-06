@@ -120,6 +120,72 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: .82; }
 .title-input:focus, .meta-row input:focus, select:focus, textarea:focus { border-color: #93b83b; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent); }
 input:disabled, select:disabled, textarea:disabled { opacity: .62; }
 
+/* Rich Note Editor */
+.rich-note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rich-note-block {
+  display: flex;
+  flex-direction: column;
+}
+.rich-note-paragraph {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--input-bg);
+  resize: vertical;
+  min-height: 48px;
+}
+.rich-note-paragraph:focus {
+  border-color: #93b83b;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+.rich-note-image {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.rich-note-image-fallback {
+  padding: 20px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--panel);
+  text-align: center;
+  font-size: 14px;
+}
+.rich-note-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.rich-note-fallback-message {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rich-note-fallback-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--input-bg);
+  font: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
 @media (max-width: 760px) {
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { min-height: auto; max-height: 43vh; border-right: 0; border-bottom: 1px solid var(--border); }
