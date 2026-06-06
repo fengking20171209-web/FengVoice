@@ -37,6 +37,7 @@ import {
   startAudioRecording,
   type AudioRecordingHandle,
 } from "./audioRecord";
+import { RichNoteEditor } from "./RichNoteEditor";
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "offline";
 type Theme = "comfort" | "warm" | "light";
@@ -530,6 +531,7 @@ export function App() {
               <option value="engineering">工程笔记</option>
               <option value="content">内容笔记</option>
               <option value="prompt">Prompt</option>
+              <option value="rich_note">图文笔记</option>
             </select>
             <input
               value={draft.tags.join(", ")}
@@ -540,14 +542,21 @@ export function App() {
               disabled={!selectedId}
             />
           </div>
-          <textarea
-            ref={contentRef}
-            value={draft.content}
-            onChange={(event) => updateDraft({ content: event.target.value })}
-            onPaste={(event) => void handleContentPaste(event)}
-            placeholder="记录想法、决策、内容草稿……"
-            disabled={!selectedId}
-          />
+          {draft.note_type === "rich_note" ? (
+            <RichNoteEditor
+              content={draft.content}
+              onChange={(serialized) => updateDraft({ content: serialized })}
+            />
+          ) : (
+            <textarea
+              ref={contentRef}
+              value={draft.content}
+              onChange={(event) => updateDraft({ content: event.target.value })}
+              onPaste={(event) => void handleContentPaste(event)}
+              placeholder="记录想法、决策、内容草稿……"
+              disabled={!selectedId}
+            />
+          )}
           {isRecording && (
             <div className="recording-indicator">
               <span className="recording-dot" />
